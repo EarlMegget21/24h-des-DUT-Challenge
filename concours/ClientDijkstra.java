@@ -7,12 +7,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Scanner;
-
-import concours.ClientDijkstra.Box;
-import concours.ClientDijkstra.Edge;
-import concours.ClientDijkstra.Graph;
+import java.util.concurrent.Semaphore;
 
 
 public class ClientDijkstra {
@@ -92,7 +88,7 @@ public class ClientDijkstra {
 			//TODO: calculer tous les chemins dans des threads différents si trop long
 			jouerTourProche(); //pour chaque objectif on dessine le chemin jusqu'à lui, la méthode assignera le bon chemin dans l'ArrayList chemin
 			/* Fin version qui trouve le chemin le plus proche */
-			
+
 			/* V2: Version qui rapporte le plus de points */
 			//jouerTour();
 			/* Fin version qui rapporte le plus de points */
@@ -186,8 +182,7 @@ public class ClientDijkstra {
 
 				System.out.println("frites:"+frites);
 			}
-			if(lab[chemin.get(0).getY()][chemin.get(0).getX()].equals("B"))
-			{
+			if(lab[chemin.get(0).getY()][chemin.get(0).getX()].equals("B")){
 				bieres+=1;
 
 				System.out.println("bieres:"+bieres);
@@ -198,6 +193,7 @@ public class ClientDijkstra {
 			listCases=new ArrayList<Box>();
 			listAretes=new ArrayList<Edge>();
 			targets=new ArrayList<Vertex>();
+			Box.uniqueIndex=0;
 
 			//on lit la prochaine situation du jeu renvoyé par le serveur
 			data=ins.readLine();
@@ -351,8 +347,19 @@ public class ClientDijkstra {
 		Edge[] edges=listAretes.toArray(new Edge[1]); //list to array
 	    Graph g = new Graph(edges); //build the graph
 
-		g.calculateShortestDistances(); //calculate the shortest distances and set all paths from the player position to every other vertices
-		g.printResult(); //get the best path to the closest target
+	    ArrayList<Thread> threads=new ArrayList<Thread>();
+	    for(Vertex target:targets){
+	    	Thread t=new Thread(new Chemin(g, target));
+	    	threads.add(t);
+	    	t.start();
+	    }
+	    for(Thread t: threads){
+	    	try {
+				t.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+	    }
 	}
 
 	/** V2: algorithme a* qui joue un tour en prenant le chemin vers l'objectif qui rapportera le plus de points**/
@@ -429,7 +436,7 @@ public class ClientDijkstra {
 		}
 		
 		/** calculates the shortest distance by taking the player position as source **/
-		public void calculateShortestDistances() {
+		public void calculateShortestDistances(Vertex target) {
 			// player position as source
 			start.setDistanceFromSource(0);
 			int nextNode = this.nodes.indexOf(start); //set the index of the first vertex to be evaluate
@@ -459,6 +466,10 @@ public class ClientDijkstra {
 
 				// next vertex must be with shortest distance
 				nextNode = getNodeShortestDistanced();
+				
+				if(nodes.get(nextNode)==target){ //we stop when we find the target
+					break;
+				}
 			}
 		}
 
@@ -481,27 +492,28 @@ public class ClientDijkstra {
 		}
 
 		/** set the final path (best target) and display the shortest distance from origin to each target **/
-		public void printResult() {
-			String output = "Number of nodes = " + this.noOfNodes;
-			output += "\nNumber of edges = " + this.noOfEdges;
+		public void printResult(Vertex target) {
+//			String output = "Number of nodes = " + this.noOfNodes;
+//			output += "\nNumber of edges = " + this.noOfEdges;
 
 			ArrayList<Box> tempPath=new ArrayList<Box>();
-			//TODO: V2: stocker un chemin temporaire et comparer le score de la target pour avoir le chemin final
-			for (Vertex target:targets) {
-				retrouver_chemin(tempPath, target);
-				output += "\nThe shortest distance is " + target.getDistanceFromSource()+"; Chemin:\n";
-				for(Box b:tempPath){
-					output += b.getX()+":"+b.getY()+"|";
+			
+			retrouver_chemin(tempPath, target);
+//			output += "\nThe shortest distance is " + target.getDistanceFromSource()+"; Chemin:\n";
+//			for(Box b:tempPath){
+//				output += b.getX()+":"+b.getY()+"|";
+//			}
+//			output += "\n";
+			
+			synchronized (chemin) { //to only let 1 thread do the comparison at a time
+				//TODO: V2: comparer le score de la target pour avoir le chemin final (ici on compare la proximité)
+				if (chemin.isEmpty() || tempPath.size() < chemin.size()) { //if the final path is not set or if it is set and its size is greater than the temporary Path, then the temporary is better
+					chemin = tempPath;
+					chemin.remove(0); //we remove the first box to have the first box of the path be the next to go
 				}
-				output += "\n";
-				
-				if(chemin.isEmpty() || tempPath.size() < chemin.size()){ //if the final path is not set or if it is set and its size is greater than the temporary Path, then the temporary is better
-					chemin=tempPath;
-				}
-				tempPath=new ArrayList<Box>();
 			}
 			
-			chemin.remove(0);
+			tempPath=new ArrayList<Box>();
 //			System.out.println(output);
 		}
 		
@@ -713,6 +725,22 @@ public class ClientDijkstra {
 			this.previous = previous;
 		}
 	}
+	
+	public static class Chemin implements Runnable{
+				private Graph graph;
+				Vertex target;
+				private Semaphore plusCourt;
+				
+				Chemin(Graph g, Vertex t){
+					graph=g;
+					target=t;
+				}
+				
+				public void run(){
+					graph.calculateShortestDistances(target); //calculate the shortest distances and set all paths from the player position to every other vertices
+					graph.printResult(target); //get the best path to the closest target
+				}
+			}
 
 	/*** Classe Ecrire (runnable pour écrire en asynchrone) ***/
 	//	public static class Ecrire implements Runnable{
