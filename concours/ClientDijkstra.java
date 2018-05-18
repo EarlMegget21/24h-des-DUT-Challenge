@@ -198,6 +198,7 @@ public class ClientDijkstra {
 			listCases=new ArrayList<Box>();
 			listAretes=new ArrayList<Edge>();
 			targets=new ArrayList<Vertex>();
+			Box.uniqueIndex=0;
 
 			//on lit la prochaine situation du jeu renvoyé par le serveur
 			data=ins.readLine();
@@ -482,18 +483,18 @@ public class ClientDijkstra {
 
 		/** set the final path (best target) and display the shortest distance from origin to each target **/
 		public void printResult() {
-			String output = "Number of nodes = " + this.noOfNodes;
-			output += "\nNumber of edges = " + this.noOfEdges;
+//			String output = "Number of nodes = " + this.noOfNodes;
+//			output += "\nNumber of edges = " + this.noOfEdges;
 
 			ArrayList<Box> tempPath=new ArrayList<Box>();
 			//TODO: V2: stocker un chemin temporaire et comparer le score de la target pour avoir le chemin final
 			for (Vertex target:targets) {
 				retrouver_chemin(tempPath, target);
-				output += "\nThe shortest distance is " + target.getDistanceFromSource()+"; Chemin:\n";
-				for(Box b:tempPath){
-					output += b.getX()+":"+b.getY()+"|";
-				}
-				output += "\n";
+//				output += "\nThe shortest distance is " + target.getDistanceFromSource()+"; Chemin:\n";
+//				for(Box b:tempPath){
+//					output += b.getX()+":"+b.getY()+"|";
+//				}
+//				output += "\n";
 				
 				if(chemin.isEmpty() || tempPath.size() < chemin.size()){ //if the final path is not set or if it is set and its size is greater than the temporary Path, then the temporary is better
 					chemin=tempPath;
