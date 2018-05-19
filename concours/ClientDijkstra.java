@@ -39,7 +39,7 @@ public class ClientDijkstra {
 		PrintWriter outs = new PrintWriter( new BufferedWriter(
 				new OutputStreamWriter(s.getOutputStream())), true);
 		outs.println("L'equipe du sale"); //envoi du nom de l'equipe
-		ins.readLine(); //lecture du code de retour (0) qui indique que la connexion est établie
+		int num=Integer.parseInt(ins.readLine())+1; //lecture du code de retour qui indique le numéro du joueur
 		//Tout ce qui est commenté correspond à des améliorations possibles du client mais pas
 		// utilisé ici (traitement parallèle)
 		//		Ecrire w=new ClientDijkstra.Ecrire(outs,arret);
@@ -58,8 +58,8 @@ public class ClientDijkstra {
 			largeur=Integer.parseInt(infos[0].split("x")[0]);
 			hauteur=Integer.parseInt(infos[0].split("x")[1]);
 			//position du joueur
-			int x=Integer.parseInt(infos[2].split("-")[1].split(",")[0]);
-			int y=Integer.parseInt(infos[2].split("-")[1].split(",")[1]);
+			int x=Integer.parseInt(infos[2].split("-")[num].split(",")[0]);
+			int y=Integer.parseInt(infos[2].split("-")[num].split(",")[1]);
 			//convertion du String en tableau de String à deux dimensions pour le plateau de jeu (on aurait pu faire à une seule dimension avec String.toArray())
 			cases=infos[1].split("-");
 			if(premierTour){ //pour n'allouer un nouveau tableau qu'au premier tour car les dimensions ne changent pas
