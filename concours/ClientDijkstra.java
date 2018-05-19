@@ -96,112 +96,134 @@ public class ClientDijkstra {
 			/* V2: Version qui rapporte le plus de points */
 			//jouerTour();
 			/* Fin version qui rapporte le plus de points */
-
-			/* Début de l'envoi du move à faire */
-			//on pourrait mettre tous ces if dans une fonction pour aérer	
-			boolean dejaJoue=false;
-			//ici on test si il y a une case du chemin qui se trouve à la portée d'une biere
-			//si c'est le cas et qu'il reste au moins 3 cases jusqu'au prochain objectif
-			if(bieres>0 && chemin.size()>=3 && !dejaJoue){
-				String moves="B";
-				int X=x;
-				int Y=y;
-				for(int i=0;i<3;i++){
-					if(chemin.get(i).getX()==X+1){
-						moves+="-E";
-						X+=1; //on doit accumuler parce qu'il faut prendre en compte qu'après ce move on sera une case pls loin
-					}else if(chemin.get(i).getX()==X-1){
-						moves+="-O";
-						X-=1;
-					}else{
-						if(chemin.get(i).getY()==Y+1){
-							moves+="-S";
-							Y+=1;
-						}else if(chemin.get(i).getY()==Y-1){
-							moves+="-N";
-							Y-=1;
-						}else{
-							moves+="-C";
-							System.err.println("Bug Biere");
+			
+			int k=0; //box index
+			Box target=chemin.get(chemin.size()-1);
+			while(target.getX()!=x || target.getY()!=y){ //while we're not at the target
+				
+				try{ //we test if the target is still a number (still there)
+					Integer.parseInt(lab[target.getY()][target.getX()]);
+					
+					/* Début de l'envoi du move à faire */
+					//on pourrait mettre tous ces if dans une fonction pour aérer	
+					boolean dejaJoue=false;
+					//ici on test si il y a une case du chemin qui se trouve à la portée d'une biere
+					//si c'est le cas et qu'il reste au moins 3 cases jusqu'au prochain objectif
+					if(bieres>0 //on a des bières
+							&& chemin.size()-k>=3 //le chemin est assez long
+							&& !dejaJoue //on n'a pas déjà joué
+							&& !(lab[chemin.get(k+1).getY()][chemin.get(k+1).getX()].equals("F")||lab[chemin.get(k+1).getY()][chemin.get(k+1).getX()].equals("B")) //on ne va pas sauter un bonus
+							&& !(lab[chemin.get(k+2).getY()][chemin.get(k+2).getX()].equals("F")||lab[chemin.get(k+2).getY()][chemin.get(k+2).getX()].equals("B")) //on ne va pas sauter un bonus
+					){
+						String moves="B";
+						int X=x;
+						int Y=y;
+						for(int i=k;i<k+3;i++){
+							if(chemin.get(i).getX()==X+1){
+								moves+="-E";
+								X+=1; //on doit accumuler parce qu'il faut prendre en compte qu'après ce move on sera une case pls loin
+							}else if(chemin.get(i).getX()==X-1){
+								moves+="-O";
+								X-=1;
+							}else{
+								if(chemin.get(i).getY()==Y+1){
+									moves+="-S";
+									Y+=1;
+								}else if(chemin.get(i).getY()==Y-1){
+									moves+="-N";
+									Y-=1;
+								}else{
+									moves+="-C";
+									System.err.println("Bug Biere");
+								}
+							}
+						}
+						outs.println(moves);
+						bieres-=1;
+						dejaJoue=true;
+						k+=2;
+						System.out.println("Utilisation biere:"+bieres);
+					}
+					//ici on test si il y a une case du chemin qui se trouve à la portée d'une frite
+					//on parcours toutes les cases du chemin, si il y a des cases qui sont à portée d'une frites alors on joue la dernière trouvée
+					if(frites>0 && !dejaJoue){
+						int index=0;
+						String direction="";
+						for(Box element:chemin){
+							if(element.getX()==x+2 && element.getY()==y && lab[y][x+1].equals("D")){ //on est obligé de tester les deux parce qu'on parcours des cases lointaines, on test aussi si la case entre est ne dune pour pouvoir sauter les murs
+								direction="-E";
+								index=chemin.indexOf(element);
+							}else if(element.getX()==x-2 && element.getY()==y && lab[y][x-1].equals("D")){
+								direction="-O";
+								index=chemin.indexOf(element);
+							}else{
+								if(element.getY()==y+2 && element.getX()==x && lab[y+1][x].equals("D")){
+									direction="-S";
+									index=chemin.indexOf(element);
+								}else if(element.getY()==y-2 && element.getX()==x && lab[y-1][x].equals("D")){
+									direction="-N";
+									index=chemin.indexOf(element);
+								}else{
+									continue;
+								}
+							}
+						}
+						if(index>k){ //if the box is between the player and the target
+							outs.println("F"+direction);
+							frites-=1;
+							dejaJoue=true;
+							k=index;
+							System.out.println("Utilisation frite:"+frites);
 						}
 					}
-				}
-				outs.println(moves);
-				bieres-=1;
-				dejaJoue=true;
-				System.out.println("Utilisation biere:"+bieres);
-			}
-			//ici on test si il y a une case du chemin qui se trouve à la portée d'une frite
-			//on parcours toutes les cases du chemin, si il y a des cases qui sont à portée d'une frites alors on joue la dernière trouvée
-			if(frites>0 && !dejaJoue){
-				int index=0;
-				String direction="";
-				for(Box element:chemin){
-					if(element.getX()==x+2 && element.getY()==y && lab[y][x+1].equals("D")){ //on est obligé de tester les deux parce qu'on parcours des cases lointaines, on test aussi si la case entre est ne dune pour pouvoir sauter les murs
-						direction="-E";
-						index=chemin.indexOf(element);
-					}else if(element.getX()==x-2 && element.getY()==y && lab[y][x-1].equals("D")){
-						direction="-O";
-						index=chemin.indexOf(element);
-					}else{
-						if(element.getY()==y+2 && element.getX()==x && lab[y+1][x].equals("D")){
-							direction="-S";
-							index=chemin.indexOf(element);
-						}else if(element.getY()==y-2 && element.getX()==x && lab[y-1][x].equals("D")){
-							direction="-N";
-							index=chemin.indexOf(element);
+					//ici on fait un move normal
+					if(!dejaJoue){
+						if(chemin.get(k).getX()==x+1){ //on peut tester qu'une coordonnée parce que la prochaine case est forcément collée à nous
+							outs.println("E");
+						}else if(chemin.get(k).getX()==x-1){
+							outs.println("O");
 						}else{
-							continue;
+							if(chemin.get(k).getY()==y+1){
+								outs.println("S");
+							}else if(chemin.get(k).getY()==y-1){
+								outs.println("N");
+							}else{
+								System.err.println("Bug");
+							}
 						}
 					}
-				}
-				if(index>=1){
-					outs.println("F"+direction);
-					frites-=1;
-					dejaJoue=true;
-					System.out.println("Utilisation frite:"+frites);
-				}
-			}
-			//ici on fait un move normal
-			if(!dejaJoue){
-				if(chemin.get(0).getX()==x+1){ //on peut tester qu'une coordonnée parce que la prochaine case est forcément collée à nous
-					outs.println("E");
-				}else if(chemin.get(0).getX()==x-1){
-					outs.println("O");
-				}else{
-					if(chemin.get(0).getY()==y+1){
-						outs.println("S");
-					}else if(chemin.get(0).getY()==y-1){
-						outs.println("N");
-					}else{
-						System.err.println("Bug");
+					/* Fin de l'envoi du move à faire */
+		
+					//on regarde si on gagne un bonus à ce tour
+					if(lab[chemin.get(k).getY()][chemin.get(k).getX()].equals("F")){
+						frites+=1;
+		
+						System.out.println("frites:"+frites);
 					}
+					if(lab[chemin.get(k).getY()][chemin.get(k).getX()].equals("B"))
+					{
+						bieres+=1;
+		
+						System.out.println("bieres:"+bieres);
+					}
+
+					x=chemin.get(k).getX();
+					y=chemin.get(k).getY();
+					k+=1; //incremment the box index
+				}catch(NumberFormatException e){
+					System.out.println("L'objectif a disparu, on change de chemin");
+					break; //if the target have been taken by somebody else, we calculate the next path
+				}finally{
+					//on lit la prochaine situation du jeu renvoyé par le serveur
+					data=ins.readLine();
 				}
 			}
-			/* Fin de l'envoi du move à faire */
-
-			//on regarde si on gagne un bonus à ce tour
-			if(lab[chemin.get(0).getY()][chemin.get(0).getX()].equals("F")){
-				frites+=1;
-
-				System.out.println("frites:"+frites);
-			}
-			if(lab[chemin.get(0).getY()][chemin.get(0).getX()].equals("B"))
-			{
-				bieres+=1;
-
-				System.out.println("bieres:"+bieres);
-			}
-
 			//on réinitialise les listes
 			chemin=new ArrayList<Box>();
 			listCases=new ArrayList<Box>();
 			listAretes=new ArrayList<Edge>();
 			targets=new ArrayList<Vertex>();
 			Box.uniqueIndex=0;
-
-			//on lit la prochaine situation du jeu renvoyé par le serveur
-			data=ins.readLine();
 		}
 		//		t.join();
 		try {
